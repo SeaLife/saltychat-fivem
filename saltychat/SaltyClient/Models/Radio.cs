@@ -21,17 +21,21 @@ namespace SaltyClient
 
     public class Tower
     {
-        public float X { get; set; }
-        public float Y { get; set; }
-        public float Z { get; set; }
-        public float Range { get; set; }
+        public float X               { get; set; }
+        public float Y               { get; set; }
+        public float Z               { get; set; }
+        public float Range           { get; set; }
+        public int?  AllowRangeStart { get; set; }
+        public int?  AllowRangeEnd   { get; set; }
 
-        public Tower(float x, float y, float z, float range = 8000f)
+        public Tower(float x, float y, float z, float range = 8000f, int? allowRangeStart = null, int? allowRangeEnd = null)
         {
-            this.X = x;
-            this.Y = y;
-            this.Z = z;
-            this.Range = range;
+            this.X               = x;
+            this.Y               = y;
+            this.Z               = z;
+            this.Range           = range;
+            this.AllowRangeStart = allowRangeStart;
+            this.AllowRangeEnd   = allowRangeEnd;
         }
     }
 

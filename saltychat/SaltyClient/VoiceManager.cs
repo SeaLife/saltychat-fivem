@@ -7,6 +7,7 @@ using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using SaltyShared;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace SaltyClient
 {
@@ -35,8 +36,9 @@ namespace SaltyClient
         public VoiceClient[] VoiceClients => this._voiceClients.Values.ToArray();
         private Dictionary<int, VoiceClient> _voiceClients = new Dictionary<int, VoiceClient>();
 
-        public Tower[] RadioTowers { get; private set; }
-        public CitizenFX.Core.UI.Notification RangeNotification { get; set; }
+        public Tower[]                        RadioTowers         { get; private set; }
+        public Tower[]                        OriginalRadioTowers { get; private set; }
+        public CitizenFX.Core.UI.Notification RangeNotification   { get; set; }
 
         public string WebSocketAddress { get; private set; } = "lh.v10.network:38088";
 
@@ -415,6 +417,8 @@ namespace SaltyClient
                 }
             }
 
+            this.UpdateRadioTowers();
+
             BaseScript.TriggerEvent(Event.SaltyChat_RadioChannelChanged, radioChannel, isPrimary);
         }
 
@@ -442,15 +446,24 @@ namespace SaltyClient
             
             foreach (dynamic tower in towers)
             {
-                if (tower.GetType() == typeof(CitizenFX.Core.Vector3))
+                if (tower is Vector3)
                     radioTowers.Add(new Tower(tower.X, tower.Y, tower.Z));
                 else if (tower.Count == 3)
                     radioTowers.Add(new Tower(tower[0], tower[1], tower[2]));
                 else if (tower.Count == 4)
                     radioTowers.Add(new Tower(tower[0], tower[1], tower[2], tower[3]));
+                else if (tower.Count == 6)
+                    radioTowers.Add(new Tower(tower[0], tower[1], tower[2], tower[3], tower[4], tower[5]));
             }
 
-            this.RadioTowers = radioTowers.ToArray();
+            this.OriginalRadioTowers = radioTowers.ToArray();
+            
+            this.UpdateRadioTowers();
+        }
+
+        private void UpdateRadioTowers()
+        {
+            this.RadioTowers = FilteredRadioTowers(this.OriginalRadioTowers);
 
             this.ExecuteCommand(
                 new PluginCommand(
@@ -461,6 +474,17 @@ namespace SaltyClient
                     )
                 )
             );
+        }
+
+        private Tower[] FilteredRadioTowers(Tower[] towers)
+        {
+            var _tmpList  = new List<Tower>(towers);
+
+            int.TryParse(PrimaryRadioChannel, out var primaryRadioChannel);
+
+            return _tmpList
+                .Where(tower => (tower.AllowRangeStart == null && tower.AllowRangeEnd == null) || (tower.AllowRangeStart >= primaryRadioChannel && tower.AllowRangeEnd <= primaryRadioChannel))
+                .ToArray();
         }
         #endregion
 
